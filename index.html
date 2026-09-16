@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Folha de Pagamento 2026 - RH</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #eef2f7;
+            display: flex;
+            justify-content: center;
+            padding: 30px 20px;
+        }
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px 35px;
+        }
+        h1 {
+            font-size: 1.9rem;
+            color: #0b2b4a;
+            border-left: 8px solid #1a73e8;
+            padding-left: 18px;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            color: #4a5c6e;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+            padding-left: 26px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px 30px;
+        }
+        .card {
+            background: #f9fcff;
+            border: 1px solid #d9e2ec;
+            border-radius: 18px;
+            padding: 18px 22px;
+            margin-bottom: 18px;
+        }
+        .card h3 {
+            font-size: 1.1rem;
+            color: #0b2b4a;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 8px;
+        }
+        .card h3 i {
+            font-style: normal;
+            font-size: 1.3rem;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #1e3a5f;
+            margin-bottom: 5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #bcccdc;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            background: white;
+            transition: 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26,115,232,0.15);
+        }
+        .row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .row > * {
+            flex: 1;
+        }
+        .check-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .check-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+            accent-color: #1a73e8;
+        }
+        .check-group label {
+            margin-bottom: 0;
+            font-weight: 500;
+        }
+        .btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 60px;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+            letter-spacing: 0.3px;
+        }
+        .btn:hover {
+            background: #0d5bbf;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(26,115,232,0.3);
+        }
+        .btn-reset {
+            background: #e2e8f0;
+            color: #1e293b;
+            margin-top: 8px;
+            padding: 12px;
+            font-size: 0.95rem;
+        }
+        .btn-reset:hover {
+            background: #cbd5e1;
+            box-shadow: none;
+        }
+        .resultado {
+            background: #0b2b4a;
+            color: white;
+            border-radius: 20px;
+            padding: 24px 28px;
+            margin-top: 30px;
+        }
+        .resultado h2 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #a8d0ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+        }
+        .result-item {
+            background: rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 14px 16px;
+            border-left: 4px solid #4a9eff;
+        }
+        .result-item .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #9bb8d4;
+            margin-bottom: 5px;
+        }
+        .result-item .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            word-break: break-word;
+        }
+        .result-item .value small {
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: #b8d0e7;
+        }
+        .badge {
+            display: inline-block;
+            background: #1a73e8;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+        .detalhamento {
+            margin-top: 28px;
+            border-top: 1px solid #2d4b6e;
+            padding-top: 22px;
+        }
+        .detalhamento h3 {
+            color: #a8d0ff;
+            font-size: 1.1rem;
+            margin-bottom: 14px;
+        }
+        .linha-detalhe {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #1f3b57;
+            font-size: 0.95rem;
+        }
+        .linha-detalhe:last-child {
+            border-bottom: none;
+        }
+        .linha-detalhe .esq {
+            color: #b8d0e7;
+        }
+        .linha-detalhe .dir {
+            font-weight: 600;
+            color: white;
+        }
+        .destaque-verde {
+            color: #7ae0a0 !important;
+        }
+        .destaque-vermelho {
+            color: #ff9f9f !important;
+        }
+        .footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #7a8b9f;
+            margin-top: 25px;
+        }
+        @media (max-width: 750px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>💰 Folha de Pagamento 2026</h1>
+    <div class="subtitle">Calculadora para o setor de RH — INSS, IRRF, VT, FGTS e salário-família</div>
+
+    <div class="grid-2">
+        <!-- COLUNA ESQUERDA -->
+        <div>
+            <div class="card">
+                <h3><i>📋</i> Dados do Empregado</h3>
+                <div class="form-group">
+                    <label>Salário-base (R$)</label>
+                    <input type="number" id="salarioBase" value="2200.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Jornada semanal</label>
+                    <select id="jornada">
+                        <option value="220">44 horas (divisor 220)</option>
+                        <option value="200">40 horas (divisor 200)</option>
+                        <option value="180">36 horas (divisor 180)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Horas extras (50%)</label>
+                    <input type="number" id="horasExtras" value="0" step="0.1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Horas noturnas computadas</label>
+                    <input type="number" id="horasNoturnas" value="0" step="0.1" min="0">
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i>📊</i> Adicionais e Variáveis</h3>
+                <div class="form-group">
+                    <label>Comissão / Gratificação (R$)</label>
+                    <input type="number" id="comissao" value="0" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>DSR sobre comissão</label>
+                    <div class="row">
+                        <input type="number" id="diasUteis" placeholder="Dias úteis" value="25" min="0">
+                        <input type="number" id="diasRepouso" placeholder="Dias repouso" value="5" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Adicional de Insalubridade</label>
+                    <select id="insalubridade">
+                        <option value="0">Não se aplica</option>
+                        <option value="0.10">Grau Mínimo (10%)</option>
+                        <option value="0.20">Grau Médio (20%)</option>
+                        <option value="0.40">Grau Máximo (40%)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Adicional de Periculosidade (30%)</label>
+                    <div class="check-group">
+                        <input type="checkbox" id="periculosidade">
+                        <label for="periculosidade">Aplicar adicional</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUNA DIREITA -->
+        <div>
+            <div class="card">
+                <h3><i>📉</i> Faltas e Descontos</h3>
+                <div class="form-group">
+                    <label>Faltas injustificadas (dias)</label>
+                    <input type="number" id="faltas" value="0" step="1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Custo mensal do Vale-Transporte (R$)</label>
+                    <input type="number" id="custoVT" value="0" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Dependentes para IRRF</label>
+                    <input type="number" id="dependentesIRRF" value="0" step="1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Filhos elegíveis ao Salário-Família</label>
+                    <input type="number" id="filhosSalarioFamilia" value="0" step="1" min="0">
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i>⚙️</i> Outras Opções</h3>
+                <div class="check-group">
+                    <input type="checkbox" id="usarDescontoSimplificado">
+                    <label for="usarDescontoSimplificado">Usar desconto simplificado IRRF (R$ 607,20)</label>
+                </div>
+                <div class="check-group" style="margin-top:12px;">
+                    <input type="checkbox" id="aplicarReducaoIRRF" checked>
+                    <label for="aplicarReducaoIRRF">Aplicar redução do IRRF 2026</label>
+                </div>
+                <div class="check-group" style="margin-top:12px;">
+                    <input type="checkbox" id="calcularFGTS" checked>
+                    <label for="calcularFGTS">Calcular FGTS (8%)</label>
+                </div>
+            </div>
+
+            <button class="btn" id="calcularBtn">🧮 Calcular Folha</button>
+            <button class="btn btn-reset" id="resetBtn">Limpar / Restaurar</button>
+        </div>
+    </div>
+
+    <!-- RESULTADO -->
+    <div class="resultado" id="resultado" style="display:none;">
+        <h2>📄 Resumo da Folha de Pagamento</h2>
+        <div class="result-grid" id="resultGrid"></div>
+
+        <div class="detalhamento" id="detalhamento">
+            <h3>🔍 Detalhamento dos Cálculos</h3>
+            <div id="linhasDetalhe"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Baseado nas tabelas e premissas do Caderno de Atividades — Folha de Pagamento 2026.
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // TABELAS 2026 (conforme PDF)
+    // ============================================================
+    const SALARIO_MINIMO = 1621.00;
+    const TETO_INSS = 8475.55;
+    const COTA_SALARIO_FAMILIA = 67.54;
+    const LIMITE_SALARIO_FAMILIA = 1980.38;
+    const DEDUCAO_DEPENDENTE_IRRF = 189.59;
+    const DESCONTO_SIMPLIFICADO = 607.20;
+
+    // Tabela INSS 2026
+    const FAIXAS_INSS = [
+        { limite: 1621.00, aliquota: 0.075 },
+        { limite: 2902.84, aliquota: 0.09 },
+        { limite: 4354.27, aliquota: 0.12 },
+        { limite: 8475.55, aliquota: 0.14 }
+    ];
+
+    // Tabela IRRF 2026
+    const FAIXAS_IRRF = [
+        { limite: 2428.80, aliquota: 0, deducao: 0 },
+        { limite: 2826.65, aliquota: 0.075, deducao: 182.16 },
+        { limite: 3751.05, aliquota: 0.15, deducao: 394.16 },
+        { limite: 4664.68, aliquota: 0.225, deducao: 675.49 },
+        { limite: Infinity, aliquota: 0.275, deducao: 908.73 }
+    ];
+
+    // ============================================================
+    // FUNÇÕES AUXILIARES
+    // ============================================================
+    function arredondar(valor) {
+        return Math.round(valor * 100) / 100;
+    }
+
+    function formatarMoeda(valor) {
+        return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // ============================================================
+    // CÁLCULO INSS PROGRESSIVO
+    // ============================================================
+    function calcularINSS(base) {
+        let inss = 0;
+        let baseRestante = base;
+        let faixaAnterior = 0;
+
+        for (let faixa of FAIXAS_INSS) {
+            if (baseRestante <= 0) break;
+            const limiteFaixa = faixa.limite;
+            const baseFaixa = Math.min(base, limiteFaixa) - faixaAnterior;
+            if (baseFaixa > 0) {
+                inss += baseFaixa * faixa.aliquota;
+            }
+            faixaAnterior = limiteFaixa;
+        }
+        return arredondar(inss);
+    }
+
+    // ============================================================
+    // CÁLCULO IRRF (com redução 2026)
+    // ============================================================
+    function calcularIRRF(rendTributavel, inss, dependentes, usarSimplificado, aplicarReducao) {
+        // 1. Determinar base de cálculo
+        let baseCalculo;
+        const deducaoLegal = inss + (dependentes * DEDUCAO_DEPENDENTE_IRRF);
+        
+        if (usarSimplificado) {
+            // Desconto simplificado: R$ 607,20 (substitui todas as deduções)
+            baseCalculo = Math.max(0, rendTributavel - DESCONTO_SIMPLIFICADO);
+        } else {
+            // Deduções legais: INSS + dependentes
+            baseCalculo = Math.max(0, rendTributavel - deducaoLegal);
+        }
+
+        // 2. Aplicar tabela progressiva
+        let imposto = 0;
+        for (let faixa of FAIXAS_IRRF) {
+            if (baseCalculo <= faixa.limite) {
+                imposto = (baseCalculo * faixa.aliquota) - faixa.deducao;
+                break;
+            }
+        }
+        imposto = Math.max(0, imposto);
+
+        // 3. Redução do IRRF 2026
+        if (aplicarReducao && rendTributavel > 0) {
+            if (rendTributavel <= 5000.00) {
+                imposto = 0;
+            } else if (rendTributavel <= 7350.00) {
+                // Redução decrescente: fórmula linear
+                // De R$ 5.000,01 a R$ 7.350,00
+                const fator = (rendTributavel - 5000) / (7350 - 5000);
+                const reducao = imposto * (1 - fator);
+                imposto = Math.max(0, imposto - reducao);
+            }
+            // Acima de 7.350,00 não há redução
+        }
+
+        return arredondar(imposto);
+    }
+
+    // ============================================================
+    // CÁLCULO PRINCIPAL
+    // ============================================================
+    function calcularFolha() {
+        // --- Entradas ---
+        const salarioBase = parseFloat(document.getElementById('salarioBase').value) || 0;
+        const divisor = parseFloat(document.getElementById('jornada').value) || 220;
+        const horasExtras = parseFloat(document.getElementById('horasExtras').value) || 0;
+        const horasNoturnas = parseFloat(document.getElementById('horasNoturnas').value) || 0;
+        const comissao = parseFloat(document.getElementById('comissao').value) || 0;
+        const diasUteis = parseFloat(document.getElementById('diasUteis').value) || 0;
+        const diasRepouso = parseFloat(document.getElementById('diasRepouso').value) || 0;
+        const insalubridadeGrau = parseFloat(document.getElementById('insalubridade').value) || 0;
+        const periculosidade = document.getElementById('periculosidade').checked;
+        const faltas = parseInt(document.getElementById('faltas').value) || 0;
+        const custoVT = parseFloat(document.getElementById('custoVT').value) || 0;
+        const dependentesIRRF = parseInt(document.getElementById('dependentesIRRF').value) || 0;
+        const filhosSalarioFamilia = parseInt(document.getElementById('filhosSalarioFamilia').value) || 0;
+        const usarSimplificado = document.getElementById('usarDescontoSimplificado').checked;
+        const aplicarReducao = document.getElementById('aplicarReducaoIRRF').checked;
+        const calcularFGTS = document.getElementById('calcularFGTS').checked;
+
+        // --- 1. Valor da hora ---
+        const valorHora = salarioBase / divisor;
+
+        // --- 2. Horas extras 50% ---
+        const valorHorasExtras = horasExtras * valorHora * 1.5;
+
+        // --- 3. Adicional noturno (20% sobre hora normal) ---
+        const adicionalNoturno = horasNoturnas * valorHora * 0.20;
+
+        // --- 4. DSR sobre comissão ---
+        let dsrComissao = 0;
+        if (comissao > 0 && diasUteis > 0 && diasRepouso > 0) {
+            dsrComissao = (comissao / diasUteis) * diasRepouso;
+        }
+
+        // --- 5. Adicional de insalubridade ---
+        let adicionalInsalubridade = 0;
+        if (insalubridadeGrau > 0) {
+            adicionalInsalubridade = SALARIO_MINIMO * insalubridadeGrau;
+        }
+
+        // --- 6. Adicional de periculosidade ---
+        let adicionalPericulosidade = 0;
+        if (periculosidade) {
+            adicionalPericulosidade = salarioBase * 0.30;
+        }
+
+        // --- 7. Desconto de faltas ---
+        const valorDia = salarioBase / 30;
+        const descontoFaltas = faltas * valorDia;
+
+        // --- 8. Salário bruto (proventos) ---
+        const salarioBruto = salarioBase 
+            + valorHorasExtras 
+            + adicionalNoturno 
+            + comissao 
+            + dsrComissao 
+            + adicionalInsalubridade 
+            + adicionalPericulosidade;
+
+        // --- 9. INSS ---
+        const baseINSS = salarioBruto; // INSS incide sobre a remuneração bruta
+        const inss = calcularINSS(baseINSS);
+
+        // --- 10. IRRF ---
+        // Rendimento tributável = salário bruto (proventos remuneratórios)
+        const rendTributavel = salarioBruto;
+        const irrf = calcularIRRF(
+            rendTributavel, 
+            inss, 
+            dependentesIRRF, 
+            usarSimplificado, 
+            aplicarReducao
+        );
+
+        // --- 11. Vale-transporte (desconto do empregado) ---
+        let descontoVT = 0;
+        if (custoVT > 0) {
+            const limite6 = salarioBase * 0.06;
+            descontoVT = Math.min(limite6, custoVT);
+        }
+
+        // --- 12. Salário-família ---
+        let salarioFamilia = 0;
+        if (salarioBruto <= LIMITE_SALARIO_FAMILIA && filhosSalarioFamilia > 0) {
+            salarioFamilia = filhosSalarioFamilia * COTA_SALARIO_FAMILIA;
+        }
+
+        // --- 13. Total de descontos ---
+        const totalDescontos = inss + irrf + descontoVT + descontoFaltas;
+
+        // --- 14. Salário líquido ---
+        const salarioLiquido = salarioBruto - totalDescontos + salarioFamilia;
+
+        // --- 15. FGTS ---
+        const fgts = calcularFGTS ? (salarioBruto * 0.08) : 0;
+
+        // ============================================================
+        // EXIBIR RESULTADOS
+        // ============================================================
+        const resultadoDiv = document.getElementById('resultado');
+        const resultGrid = document.getElementById('resultGrid');
+        const linhasDetalhe = document.getElementById('linhasDetalhe');
+
+        resultadoDiv.style.display = 'block';
+
+        // Cards de resumo
+        resultGrid.innerHTML = `
+            <div class="result-item">
+                <div class="label">Salário Bruto</div>
+                <div class="value">R$ ${formatarMoeda(salarioBruto)}</div>
+            </div>
+            <div class="result-item">
+                <div class="label">Total de Descontos</div>
+                <div class="value destaque-vermelho">R$ ${formatarMoeda(totalDescontos)}</div>
+            </div>
+            <div class="result-item">
+                <div class="label">Salário Líquido</div>
+                <div class="value destaque-verde">R$ ${formatarMoeda(salarioLiquido)}</div>
+            </div>
+            <div class="result-item">
+                <div class="label">FGTS (8%)</div>
+                <div class="value">R$ ${formatarMoeda(fgts)}</div>
+            </div>
+        `;
+
+        // Detalhamento
+        let htmlDetalhe = '';
+
+        // Proventos
+        htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Salário-base</span><span class="dir">R$ ${formatarMoeda(salarioBase)}</span></div>`;
+        if (valorHorasExtras > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Horas extras (${horasExtras}h × 50%)</span><span class="dir">R$ ${formatarMoeda(valorHorasExtras)}</span></div>`;
+        }
+        if (adicionalNoturno > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Adicional noturno (${horasNoturnas}h)</span><span class="dir">R$ ${formatarMoeda(adicionalNoturno)}</span></div>`;
+        }
+        if (comissao > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Comissão / Gratificação</span><span class="dir">R$ ${formatarMoeda(comissao)}</span></div>`;
+        }
+        if (dsrComissao > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">DSR sobre comissão</span><span class="dir">R$ ${formatarMoeda(dsrComissao)}</span></div>`;
+        }
+        if (adicionalInsalubridade > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Adicional de insalubridade (${(insalubridadeGrau*100).toFixed(0)}%)</span><span class="dir">R$ ${formatarMoeda(adicionalInsalubridade)}</span></div>`;
+        }
+        if (adicionalPericulosidade > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Adicional de periculosidade (30%)</span><span class="dir">R$ ${formatarMoeda(adicionalPericulosidade)}</span></div>`;
+        }
+        if (salarioFamilia > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Salário-família (${filhosSalarioFamilia} × R$ ${formatarMoeda(COTA_SALARIO_FAMILIA)})</span><span class="dir destaque-verde">+ R$ ${formatarMoeda(salarioFamilia)}</span></div>`;
+        }
+
+        htmlDetalhe += `<div class="linha-detalhe" style="margin-top:6px; border-top:1px solid #4a6a8a;"><span class="esq"><strong>Total de Proventos</strong></span><span class="dir"><strong>R$ ${formatarMoeda(salarioBruto)}</strong></span></div>`;
+
+        // Descontos
+        htmlDetalhe += `<div style="margin-top:16px;"></div>`;
+        if (descontoFaltas > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Faltas injustificadas (${faltas} dia(s))</span><span class="dir destaque-vermelho">- R$ ${formatarMoeda(descontoFaltas)}</span></div>`;
+        }
+        htmlDetalhe += `<div class="linha-detalhe"><span class="esq">INSS</span><span class="dir destaque-vermelho">- R$ ${formatarMoeda(inss)}</span></div>`;
+        if (irrf > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">IRRF</span><span class="dir destaque-vermelho">- R$ ${formatarMoeda(irrf)}</span></div>`;
+        }
+        if (descontoVT > 0) {
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Vale-transporte</span><span class="dir destaque-vermelho">- R$ ${formatarMoeda(descontoVT)}</span></div>`;
+        }
+
+        htmlDetalhe += `<div class="linha-detalhe" style="margin-top:6px; border-top:1px solid #4a6a8a;"><span class="esq"><strong>Total de Descontos</strong></span><span class="dir destaque-vermelho"><strong>- R$ ${formatarMoeda(totalDescontos)}</strong></span></div>`;
+
+        // Líquido
+        htmlDetalhe += `<div class="linha-detalhe" style="margin-top:12px; border-top:2px solid #4a9eff; font-size:1.2rem;"><span class="esq"><strong>Salário Líquido</strong></span><span class="dir destaque-verde"><strong>R$ ${formatarMoeda(salarioLiquido)}</strong></span></div>`;
+
+        // FGTS
+        if (calcularFGTS) {
+            htmlDetalhe += `<div class="linha-detalhe" style="margin-top:8px; color:#9bb8d4;"><span class="esq">FGTS (depósito do empregador)</span><span class="dir">R$ ${formatarMoeda(fgts)}</span></div>`;
+        }
+
+        linhasDetalhe.innerHTML = htmlDetalhe;
+    }
+
+    // ============================================================
+    // RESET
+    // ============================================================
+    function resetar() {
+        document.getElementById('salarioBase').value = '2200.00';
+        document.getElementById('jornada').value = '220';
+        document.getElementById('horasExtras').value = '0';
+        document.getElementById('horasNoturnas').value = '0';
+        document.getElementById('comissao').value = '0';
+        document.getElementById('diasUteis').value = '25';
+        document.getElementById('diasRepouso').value = '5';
+        document.getElementById('insalubridade').value = '0';
+        document.getElementById('periculosidade').checked = false;
+        document.getElementById('faltas').value = '0';
+        document.getElementById('custoVT').value = '0';
+        document.getElementById('dependentesIRRF').value = '0';
+        document.getElementById('filhosSalarioFamilia').value = '0';
+        document.getElementById('usarDescontoSimplificado').checked = false;
+        document.getElementById('aplicarReducaoIRRF').checked = true;
+        document.getElementById('calcularFGTS').checked = true;
+        document.getElementById('resultado').style.display = 'none';
+    }
+
+    // ============================================================
+    // EVENTOS
+    // ============================================================
+    document.getElementById('calcularBtn').addEventListener('click', calcularFolha);
+    document.getElementById('resetBtn').addEventListener('click', resetar);
+
+    // Calcular automaticamente ao carregar
+    window.addEventListener('load', function() {
+        calcularFolha();
+    });
+</script>
+</body>
+</html>
