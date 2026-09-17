@@ -330,7 +330,7 @@ body{background:var(--rh-bg);color:var(--rh-text)}
   </section>
 
   <section id="calculadora" class="view">
-    
+
 <div class="container">
     <h1>💰 Folha de Pagamento 2026</h1>
     <div class="subtitle">Calculadora para o setor de RH — INSS, IRRF, VT, FGTS e salário-família</div>
@@ -437,6 +437,18 @@ body{background:var(--rh-bg);color:var(--rh-text)}
         </div>
     </div>
 
+    <!-- ========================================================= -->
+    <!-- NOVA SEÇÃO: VISUALIZAÇÃO DO CÁLCULO COMPLETO (PASSO A PASSO) -->
+    <!-- ========================================================= -->
+    <div id="memoriaCalculo" style="display:none; margin-top:30px;">
+        <div style="background:#f1f7ff; border:1px solid #b9d6ff; border-radius:20px; padding:22px 26px;">
+            <h2 style="font-size:1.3rem; color:#0b2b4a; margin-bottom:16px; display:flex; align-items:center; gap:10px;">
+                🧾 Visualização do Cálculo Completo
+            </h2>
+            <div id="memoriaConteudo" style="font-size:0.92rem; color:#1e3a5f; line-height:1.7;"></div>
+        </div>
+    </div>
+
     <!-- RESULTADO -->
     <div class="resultado" id="resultado" style="display:none;">
         <h2>📄 Resumo da Folha de Pagamento</h2>
@@ -493,66 +505,101 @@ body{background:var(--rh-bg);color:var(--rh-text)}
     }
 
     // ============================================================
-    // CÁLCULO INSS PROGRESSIVO
+    // CÁLCULO INSS PROGRESSIVO (passo a passo)
     // ============================================================
-    function calcularINSS(base) {
+    function calcularINSSDetalhado(base) {
         let inss = 0;
-        let baseRestante = base;
         let faixaAnterior = 0;
+        const passos = [];
 
         for (let faixa of FAIXAS_INSS) {
-            if (baseRestante <= 0) break;
-            const limiteFaixa = faixa.limite;
-            const baseFaixa = Math.min(base, limiteFaixa) - faixaAnterior;
+            if (base <= faixaAnterior) break;
+            const baseFaixa = Math.min(base, faixa.limite) - faixaAnterior;
             if (baseFaixa > 0) {
-                inss += baseFaixa * faixa.aliquota;
+                const contrib = baseFaixa * faixa.aliquota;
+                inss += contrib;
+                passos.push({
+                    faixa: `${formatarMoeda(faixaAnterior)} → ${formatarMoeda(Math.min(base, faixa.limite))}`,
+                    base: baseFaixa,
+                    aliquota: faixa.aliquota,
+                    contribuicao: contrib
+                });
             }
-            faixaAnterior = limiteFaixa;
+            faixaAnterior = faixa.limite;
         }
-        return arredondar(inss);
+
+        return { total: arredondar(inss), passos };
     }
 
     // ============================================================
-    // CÁLCULO IRRF (com redução 2026)
+    // CÁLCULO IRRF (com redução 2026) - passo a passo
     // ============================================================
-    function calcularIRRF(rendTributavel, inss, dependentes, usarSimplificado, aplicarReducao) {
-        // 1. Determinar base de cálculo
-        let baseCalculo;
-        const deducaoLegal = inss + (dependentes * DEDUCAO_DEPENDENTE_IRRF);
-        
-        if (usarSimplificado) {
-            // Desconto simplificado: R$ 607,20 (substitui todas as deduções)
-            baseCalculo = Math.max(0, rendTributavel - DESCONTO_SIMPLIFICADO);
-        } else {
-            // Deduções legais: INSS + dependentes
-            baseCalculo = Math.max(0, rendTributavel - deducaoLegal);
-        }
+    function calcularIRRFDetalhado(rendTributavel, inss, dependentes, usarSimplificado, aplicarReducao) {
+        const info = {};
 
-        // 2. Aplicar tabela progressiva
+        // 1. Deduções
+        const deducaoDependentes = dependentes * DEDUCAO_DEPENDENTE_IRRF;
+        const deducaoLegal = inss + deducaoDependentes;
+        info.deducaoDependentes = deducaoDependentes;
+        info.deducaoLegal = deducaoLegal;
+        info.usarSimplificado = usarSimplificado;
+
+        // 2. Base de cálculo
+        let baseCalculo;
+        if (usarSimplificado) {
+            baseCalculo = Math.max(0, rendTributavel - DESCONTO_SIMPLIFICADO);
+            info.metodoBase = 'Desconto simplificado';
+            info.descontoAplicado = DESCONTO_SIMPLIFICADO;
+        } else {
+            baseCalculo = Math.max(0, rendTributavel - deducaoLegal);
+            info.metodoBase = 'Deduções legais (INSS + dependentes)';
+            info.descontoAplicado = deducaoLegal;
+        }
+        info.baseCalculo = baseCalculo;
+
+        // 3. Tabela progressiva
         let imposto = 0;
+        let faixaAplicada = null;
         for (let faixa of FAIXAS_IRRF) {
             if (baseCalculo <= faixa.limite) {
                 imposto = (baseCalculo * faixa.aliquota) - faixa.deducao;
+                faixaAplicada = faixa;
                 break;
             }
         }
         imposto = Math.max(0, imposto);
+        info.impostoTabela = imposto;
+        info.faixaAplicada = faixaAplicada;
+        info.aliquota = faixaAplicada ? faixaAplicada.aliquota : 0;
+        info.deducaoTabela = faixaAplicada ? faixaAplicada.deducao : 0;
 
-        // 3. Redução do IRRF 2026
+        // 4. Redução do IRRF 2026
+        let impostoFinal = imposto;
+        info.reducaoAplicada = 0;
+        info.reducaoDescricao = 'Não aplicável';
+
         if (aplicarReducao && rendTributavel > 0) {
             if (rendTributavel <= 5000.00) {
-                imposto = 0;
+                info.reducaoAplicada = imposto;
+                impostoFinal = 0;
+                info.reducaoDescricao = 'Até R$ 5.000,00: redução total (imposto zerado)';
             } else if (rendTributavel <= 7350.00) {
-                // Redução decrescente: fórmula linear
-                // De R$ 5.000,01 a R$ 7.350,00
-                const fator = (rendTributavel - 5000) / (7350 - 5000);
-                const reducao = imposto * (1 - fator);
-                imposto = Math.max(0, imposto - reducao);
+                // Fórmula do PDF: R$ 978,62 - (0,133145 × rendimentos tributáveis)
+                const reducaoPotencial = 978.62 - (0.133145 * rendTributavel);
+                const reducao = Math.max(0, Math.min(imposto, reducaoPotencial));
+                info.reducaoAplicada = reducao;
+                impostoFinal = Math.max(0, imposto - reducao);
+                info.reducaoDescricao = `R$ 978,62 - (0,133145 × ${formatarMoeda(rendTributavel)}) = R$ ${formatarMoeda(Math.max(0, reducaoPotencial))}`;
+                info.reducaoPotencial = Math.max(0, reducaoPotencial);
+            } else {
+                info.reducaoDescricao = 'Acima de R$ 7.350,00: sem redução adicional';
             }
-            // Acima de 7.350,00 não há redução
+        } else if (!aplicarReducao) {
+            info.reducaoDescricao = 'Redução desativada pelo usuário';
         }
 
-        return arredondar(imposto);
+        info.impostoFinal = arredondar(impostoFinal);
+        return { total: arredondar(impostoFinal), info };
     }
 
     // ============================================================
@@ -609,28 +656,29 @@ body{background:var(--rh-bg);color:var(--rh-text)}
         const descontoFaltas = faltas * valorDia;
 
         // --- 8. Salário bruto (proventos) ---
-        const salarioBruto = salarioBase 
-            + valorHorasExtras 
-            + adicionalNoturno 
-            + comissao 
-            + dsrComissao 
-            + adicionalInsalubridade 
+        const salarioBruto = salarioBase
+            + valorHorasExtras
+            + adicionalNoturno
+            + comissao
+            + dsrComissao
+            + adicionalInsalubridade
             + adicionalPericulosidade;
 
         // --- 9. INSS ---
-        const baseINSS = salarioBruto; // INSS incide sobre a remuneração bruta
-        const inss = calcularINSS(baseINSS);
+        const baseINSS = Math.min(salarioBruto, TETO_INSS);
+        const inssDetalhe = calcularINSSDetalhado(baseINSS);
+        const inss = inssDetalhe.total;
 
         // --- 10. IRRF ---
-        // Rendimento tributável = salário bruto (proventos remuneratórios)
         const rendTributavel = salarioBruto;
-        const irrf = calcularIRRF(
-            rendTributavel, 
-            inss, 
-            dependentesIRRF, 
-            usarSimplificado, 
+        const irrfDetalhe = calcularIRRFDetalhado(
+            rendTributavel,
+            inss,
+            dependentesIRRF,
+            usarSimplificado,
             aplicarReducao
         );
+        const irrf = irrfDetalhe.total;
 
         // --- 11. Vale-transporte (desconto do empregado) ---
         let descontoVT = 0;
@@ -655,7 +703,104 @@ body{background:var(--rh-bg);color:var(--rh-text)}
         const fgts = calcularFGTS ? (salarioBruto * 0.08) : 0;
 
         // ============================================================
-        // EXIBIR RESULTADOS
+        // VISUALIZAÇÃO DO CÁLCULO COMPLETO (PASSO A PASSO)
+        // ============================================================
+        const memoriaDiv = document.getElementById('memoriaCalculo');
+        const memoriaConteudo = document.getElementById('memoriaConteudo');
+
+        memoriaDiv.style.display = 'block';
+
+        let mem = '';
+
+        // Etapa 1 - Valor da hora
+        mem += `<p><strong>1. Valor da hora trabalhada</strong><br>
+            Fórmula: salário-base ÷ divisor da jornada<br>
+            R$ ${formatarMoeda(salarioBase)} ÷ ${divisor} = <strong>R$ ${formatarMoeda(valorHora)}</strong></p>`;
+
+        // Etapa 2 - Horas extras
+        mem += `<p><strong>2. Horas extras (50%)</strong><br>
+            Fórmula: horas extras × valor da hora × 1,5<br>
+            ${horasExtras}h × R$ ${formatarMoeda(valorHora)} × 1,5 = <strong>R$ ${formatarMoeda(valorHorasExtras)}</strong></p>`;
+
+        // Etapa 3 - Adicional noturno
+        mem += `<p><strong>3. Adicional noturno (20%)</strong><br>
+            Fórmula: horas noturnas × valor da hora × 0,20<br>
+            ${horasNoturnas}h × R$ ${formatarMoeda(valorHora)} × 0,20 = <strong>R$ ${formatarMoeda(adicionalNoturno)}</strong></p>`;
+
+        // Etapa 4 - DSR sobre comissão
+        mem += `<p><strong>4. DSR sobre comissão</strong><br>
+            Fórmula: (comissão ÷ dias úteis) × dias de repouso<br>
+            (R$ ${formatarMoeda(comissao)} ÷ ${diasUteis}) × ${diasRepouso} = <strong>R$ ${formatarMoeda(dsrComissao)}</strong></p>`;
+
+        // Etapa 5 - Insalubridade
+        mem += `<p><strong>5. Adicional de insalubridade</strong><br>
+            Fórmula: salário mínimo × grau<br>
+            R$ ${formatarMoeda(SALARIO_MINIMO)} × ${(insalubridadeGrau * 100).toFixed(0)}% = <strong>R$ ${formatarMoeda(adicionalInsalubridade)}</strong></p>`;
+
+        // Etapa 6 - Periculosidade
+        mem += `<p><strong>6. Adicional de periculosidade (30%)</strong><br>
+            Fórmula: salário-base × 0,30<br>
+            R$ ${formatarMoeda(salarioBase)} × 0,30 = <strong>R$ ${formatarMoeda(adicionalPericulosidade)}</strong></p>`;
+
+        // Etapa 7 - Faltas
+        mem += `<p><strong>7. Desconto de faltas</strong><br>
+            Fórmula: (salário-base ÷ 30) × dias de falta<br>
+            (R$ ${formatarMoeda(salarioBase)} ÷ 30) × ${faltas} = <strong>R$ ${formatarMoeda(descontoFaltas)}</strong></p>`;
+
+        // Etapa 8 - Salário bruto
+        mem += `<p><strong>8. Salário bruto (total de proventos)</strong><br>
+            R$ ${formatarMoeda(salarioBase)} + R$ ${formatarMoeda(valorHorasExtras)} + R$ ${formatarMoeda(adicionalNoturno)} + R$ ${formatarMoeda(comissao)} + R$ ${formatarMoeda(dsrComissao)} + R$ ${formatarMoeda(adicionalInsalubridade)} + R$ ${formatarMoeda(adicionalPericulosidade)} = <strong>R$ ${formatarMoeda(salarioBruto)}</strong></p>`;
+
+        // Etapa 9 - INSS
+        mem += `<p><strong>9. INSS (progressivo por faixas)</strong><br>
+            Base de cálculo: R$ ${formatarMoeda(baseINSS)}`;
+        inssDetalhe.passos.forEach(p => {
+            mem += `<br>&nbsp;&nbsp;• Faixa ${p.faixa}: R$ ${formatarMoeda(p.base)} × ${(p.aliquota * 100).toFixed(1)}% = R$ ${formatarMoeda(p.contribuicao)}`;
+        });
+        mem += `<br><strong>INSS total: R$ ${formatarMoeda(inss)}</strong></p>`;
+
+        // Etapa 10 - IRRF
+        mem += `<p><strong>10. IRRF</strong><br>
+            Rendimento tributável: R$ ${formatarMoeda(rendTributavel)}<br>
+            Método de dedução: ${irrfDetalhe.info.metodoBase}<br>
+            Dedução aplicada: R$ ${formatarMoeda(irrfDetalhe.info.descontoAplicado)}<br>
+            Base de cálculo: <strong>R$ ${formatarMoeda(irrfDetalhe.info.baseCalculo)}</strong><br>
+            Alíquota: ${(irrfDetalhe.info.aliquota * 100).toFixed(1)}% | Parcela a deduzir: R$ ${formatarMoeda(irrfDetalhe.info.deducaoTabela)}<br>
+            Imposto pela tabela: R$ ${formatarMoeda(irrfDetalhe.info.impostoTabela)}<br>
+            Redução 2026: ${irrfDetalhe.info.reducaoDescricao}<br>
+            <strong>IRRF final: R$ ${formatarMoeda(irrf)}</strong></p>`;
+
+        // Etapa 11 - VT
+        mem += `<p><strong>11. Vale-transporte (desconto do empregado)</strong><br>
+            Fórmula: menor valor entre 6% do salário-base e o custo mensal<br>
+            6% de R$ ${formatarMoeda(salarioBase)} = R$ ${formatarMoeda(salarioBase * 0.06)}<br>
+            Custo informado: R$ ${formatarMoeda(custoVT)}<br>
+            <strong>Desconto VT: R$ ${formatarMoeda(descontoVT)}</strong></p>`;
+
+        // Etapa 12 - Salário-família
+        mem += `<p><strong>12. Salário-família</strong><br>
+            Verificação: salário bruto (R$ ${formatarMoeda(salarioBruto)}) ≤ limite (R$ ${formatarMoeda(LIMITE_SALARIO_FAMILIA)})? ${salarioBruto <= LIMITE_SALARIO_FAMILIA ? 'Sim' : 'Não'}<br>
+            Filhos elegíveis: ${filhosSalarioFamilia}<br>
+            <strong>Salário-família: R$ ${formatarMoeda(salarioFamilia)}</strong></p>`;
+
+        // Etapa 13 - Total de descontos
+        mem += `<p><strong>13. Total de descontos</strong><br>
+            INSS (R$ ${formatarMoeda(inss)}) + IRRF (R$ ${formatarMoeda(irrf)}) + VT (R$ ${formatarMoeda(descontoVT)}) + Faltas (R$ ${formatarMoeda(descontoFaltas)}) = <strong>R$ ${formatarMoeda(totalDescontos)}</strong></p>`;
+
+        // Etapa 14 - Salário líquido
+        mem += `<p><strong>14. Salário líquido</strong><br>
+            Fórmula: salário bruto − descontos + salário-família<br>
+            R$ ${formatarMoeda(salarioBruto)} − R$ ${formatarMoeda(totalDescontos)} + R$ ${formatarMoeda(salarioFamilia)} = <strong>R$ ${formatarMoeda(salarioLiquido)}</strong></p>`;
+
+        // Etapa 15 - FGTS
+        mem += `<p><strong>15. FGTS (8%)</strong><br>
+            Fórmula: salário bruto × 0,08<br>
+            R$ ${formatarMoeda(salarioBruto)} × 0,08 = <strong>R$ ${formatarMoeda(fgts)}</strong> (depósito do empregador)</p>`;
+
+        memoriaConteudo.innerHTML = mem;
+
+        // ============================================================
+        // EXIBIR RESULTADOS (cards e detalhamento)
         // ============================================================
         const resultadoDiv = document.getElementById('resultado');
         const resultGrid = document.getElementById('resultGrid');
@@ -663,7 +808,6 @@ body{background:var(--rh-bg);color:var(--rh-text)}
 
         resultadoDiv.style.display = 'block';
 
-        // Cards de resumo
         resultGrid.innerHTML = `
             <div class="result-item">
                 <div class="label">Valor da Hora Trabalhada</div>
@@ -687,10 +831,8 @@ body{background:var(--rh-bg);color:var(--rh-text)}
             </div>
         `;
 
-        // Detalhamento
         let htmlDetalhe = '';
 
-        // Proventos
         htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Valor da hora trabalhada (${formatarMoeda(salarioBase)} ÷ ${divisor})</span><span class="dir">R$ ${formatarMoeda(valorHora)}</span></div>`;
         htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Salário-base</span><span class="dir">R$ ${formatarMoeda(salarioBase)}</span></div>`;
         if (valorHorasExtras > 0) {
@@ -706,7 +848,7 @@ body{background:var(--rh-bg);color:var(--rh-text)}
             htmlDetalhe += `<div class="linha-detalhe"><span class="esq">DSR sobre comissão</span><span class="dir">R$ ${formatarMoeda(dsrComissao)}</span></div>`;
         }
         if (adicionalInsalubridade > 0) {
-            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Adicional de insalubridade (${(insalubridadeGrau*100).toFixed(0)}%)</span><span class="dir">R$ ${formatarMoeda(adicionalInsalubridade)}</span></div>`;
+            htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Adicional de insalubridade (${(insalubridadeGrau * 100).toFixed(0)}%)</span><span class="dir">R$ ${formatarMoeda(adicionalInsalubridade)}</span></div>`;
         }
         if (adicionalPericulosidade > 0) {
             htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Adicional de periculosidade (30%)</span><span class="dir">R$ ${formatarMoeda(adicionalPericulosidade)}</span></div>`;
@@ -717,7 +859,6 @@ body{background:var(--rh-bg);color:var(--rh-text)}
 
         htmlDetalhe += `<div class="linha-detalhe" style="margin-top:6px; border-top:1px solid #4a6a8a;"><span class="esq"><strong>Total de Proventos</strong></span><span class="dir"><strong>R$ ${formatarMoeda(salarioBruto)}</strong></span></div>`;
 
-        // Descontos
         htmlDetalhe += `<div style="margin-top:16px;"></div>`;
         if (descontoFaltas > 0) {
             htmlDetalhe += `<div class="linha-detalhe"><span class="esq">Faltas injustificadas (${faltas} dia(s))</span><span class="dir destaque-vermelho">- R$ ${formatarMoeda(descontoFaltas)}</span></div>`;
@@ -732,10 +873,8 @@ body{background:var(--rh-bg);color:var(--rh-text)}
 
         htmlDetalhe += `<div class="linha-detalhe" style="margin-top:6px; border-top:1px solid #4a6a8a;"><span class="esq"><strong>Total de Descontos</strong></span><span class="dir destaque-vermelho"><strong>- R$ ${formatarMoeda(totalDescontos)}</strong></span></div>`;
 
-        // Líquido
         htmlDetalhe += `<div class="linha-detalhe" style="margin-top:12px; border-top:2px solid #4a9eff; font-size:1.2rem;"><span class="esq"><strong>Salário Líquido</strong></span><span class="dir destaque-verde"><strong>R$ ${formatarMoeda(salarioLiquido)}</strong></span></div>`;
 
-        // FGTS
         if (calcularFGTS) {
             htmlDetalhe += `<div class="linha-detalhe" style="margin-top:8px; color:#9bb8d4;"><span class="esq">FGTS (depósito do empregador)</span><span class="dir">R$ ${formatarMoeda(fgts)}</span></div>`;
         }
@@ -764,6 +903,7 @@ body{background:var(--rh-bg);color:var(--rh-text)}
         document.getElementById('aplicarReducaoIRRF').checked = true;
         document.getElementById('calcularFGTS').checked = true;
         document.getElementById('resultado').style.display = 'none';
+        document.getElementById('memoriaCalculo').style.display = 'none';
     }
 
     // ============================================================
@@ -841,7 +981,7 @@ body{background:var(--rh-bg);color:var(--rh-text)}
   window.dpDel=i=>{if(confirm('Excluir este empregado?')){empregados.splice(i,1);save();renderEmp();renderSelect();updateMetrics();}};
   window.dpCalc=i=>{fillCalc(empregados[i]);document.querySelector('[data-view="calculadora"]').click();};
   function fillCalc(e){
-    const map=[['salarioBase',e.salario],['jornada',e.jornada],['dependentes',e.dep],['filhos',e.filhos]];
+    const map=[['salarioBase',e.salario],['jornada',e.jornada],['dependentesIRRF',e.dep],['filhosSalarioFamilia',e.filhos]];
     map.forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v});
   }
   function renderSelect(){const s=$('folhaEmp');s.innerHTML='<option value="">Selecione...</option>'+empregados.map((e,i)=>`<option value="${i}">${esc(e.nome)}</option>`).join('');}
@@ -857,8 +997,6 @@ body{background:var(--rh-bg);color:var(--rh-text)}
     const b=historico.reduce((a,h)=>a+h.bruto,0),d=historico.reduce((a,h)=>a+h.desc,0),f=historico.reduce((a,h)=>a+h.fgts,0);
     $('mFolha').textContent=money(b);$('mDesc').textContent=money(d);$('mFgts').textContent=money(f);
   }
-  // Hook into the existing calculator without assuming its internal variable names.
-  // A snapshot is stored whenever the original result area changes.
   const resultArea=document.querySelector('#resultado')||document.querySelector('.resultado')||document.body;
   const obs=new MutationObserver(()=>{
     const txt=resultArea.innerText||'';
@@ -866,7 +1004,6 @@ body{background:var(--rh-bg);color:var(--rh-text)}
     const vals=[...txt.matchAll(/R\$\s*([\d.]+,\d{2})/g)].map(m=>Number(m[1].replaceAll('.','').replace(',','.')));
     if(vals.length>=3){
       const h={data:new Date().toLocaleString('pt-BR'),nome:'Cálculo manual',bruto:vals[0]||0,desc:vals[1]||0,liq:vals[2]||0,fgts:vals[3]||0};
-      // avoid saving identical consecutive snapshots
       const last=historico[0]; if(!last || JSON.stringify(last)!==JSON.stringify(h)){historico.unshift(h);historico=historico.slice(0,100);localStorage.setItem(HIST,JSON.stringify(historico));updateMetrics();}
     }
   });
