@@ -501,7 +501,10 @@ body{background:var(--rh-bg);color:var(--rh-text)}
     }
 
     function formatarMoeda(valor) {
-        return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return Number(valor || 0).toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
 
     // ============================================================
@@ -880,6 +883,18 @@ body{background:var(--rh-bg);color:var(--rh-text)}
         }
 
         linhasDetalhe.innerHTML = htmlDetalhe;
+
+        // ============================================================
+        // NOTIFICAR O SISTEMA EXTERNO (HISTÓRICO / RELATÓRIOS)
+        // ============================================================
+        if (typeof window.registrarCalculo === 'function') {
+            window.registrarCalculo({
+                bruto: salarioBruto,
+                desc: totalDescontos,
+                liq: salarioLiquido,
+                fgts: fgts
+            });
+        }
     }
 
     // ============================================================
@@ -949,6 +964,9 @@ body{background:var(--rh-bg);color:var(--rh-text)}
   let empregados=JSON.parse(localStorage.getItem(KEY)||'[]');
   let historico=JSON.parse(localStorage.getItem(HIST)||'[]');
 
+  // ---------------------------------------------------------
+  // Navegação entre abas
+  // ---------------------------------------------------------
   document.querySelectorAll('.nav-tabs button').forEach(btn=>{
     btn.addEventListener('click',()=>{
       document.querySelectorAll('.nav-tabs button').forEach(b=>b.classList.remove('active'));
@@ -963,52 +981,184 @@ body{background:var(--rh-bg);color:var(--rh-text)}
 
   function money(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
   function save(){localStorage.setItem(KEY,JSON.stringify(empregados));}
+
+  // ---------------------------------------------------------
+  // Empregados
+  // ---------------------------------------------------------
   function renderEmp(filter=''){
     const q=filter.toLowerCase();
-    $('empTable').innerHTML=empregados.filter(e=>(e.nome+' '+e.cargo).toLowerCase().includes(q)).map((e,i)=>
-      `<tr><td>${esc(e.nome)}</td><td>${esc(e.cargo||'—')}</td><td>${money(e.salario)}</td><td>${e.jornada}</td><td>${e.dep||0}</td><td><button class="action-btn" onclick="window.dpEdit(${i})">Editar</button> <button class="action-btn" onclick="window.dpCalc(${i})">Folha</button> <button class="action-btn" onclick="window.dpDel(${i})">Excluir</button></td></tr>`).join('') ||
+    $('empTable').innerHTML=empregados
+      .filter(e=>(e.nome+' '+e.cargo).toLowerCase().includes(q))
+      .map((e,i)=>
+        `<tr>
+          <td>${esc(e.nome)}</td>
+          <td>${esc(e.cargo||'—')}</td>
+          <td>${money(e.salario)}</td>
+          <td>${e.jornada}</td>
+          <td>${e.dep||0}</td>
+          <td>
+            <button class="action-btn" onclick="window.dpEdit(${i})">Editar</button>
+            <button class="action-btn" onclick="window.dpCalc(${i})">Folha</button>
+            <button class="action-btn" onclick="window.dpDel(${i})">Excluir</button>
+          </td>
+        </tr>`).join('') ||
       '<tr><td colspan="6" class="empty">Nenhum empregado cadastrado.</td></tr>';
   }
+
   function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
   $('employeeForm').addEventListener('submit',e=>{
     e.preventDefault();
-    const emp={nome:$('eNome').value,cpf:$('eCpf').value,cargo:$('eCargo').value,salario:Number($('eSalario').value||0),jornada:$('eJornada').value,dep:Number($('eDep').value||0),filhos:Number($('eFilhos').value||0),obs:$('eObs').value};
+    const emp={
+      nome:$('eNome').value,
+      cpf:$('eCpf').value,
+      cargo:$('eCargo').value,
+      salario:Number($('eSalario').value||0),
+      jornada:$('eJornada').value,
+      dep:Number($('eDep').value||0),
+      filhos:Number($('eFilhos').value||0),
+      obs:$('eObs').value
+    };
     const edit=$('employeeForm').dataset.edit;
-    if(edit!==undefined){empregados[Number(edit)]=emp;delete $('employeeForm').dataset.edit;} else empregados.push(emp);
-    save(); e.target.reset(); $('eDep').value=0;$('eFilhos').value=0;$('eJornada').value='220'; renderEmp(); renderSelect(); updateMetrics();
+    if(edit!==undefined){ empregados[Number(edit)]=emp; delete $('employeeForm').dataset.edit; }
+    else empregados.push(emp);
+    save();
+    e.target.reset();
+    $('eDep').value=0; $('eFilhos').value=0; $('eJornada').value='220';
+    renderEmp(); renderSelect(); updateMetrics();
   });
-  window.dpEdit=i=>{const e=empregados[i];Object.entries({eNome:e.nome,eCpf:e.cpf,eCargo:e.cargo,eSalario:e.salario,eJornada:e.jornada,eDep:e.dep,eFilhos:e.filhos,eObs:e.obs}).forEach(([id,v])=>$(id).value=v??'');$('employeeForm').dataset.edit=i;document.querySelector('[data-view="empregados"]').click();};
-  window.dpDel=i=>{if(confirm('Excluir este empregado?')){empregados.splice(i,1);save();renderEmp();renderSelect();updateMetrics();}};
-  window.dpCalc=i=>{fillCalc(empregados[i]);document.querySelector('[data-view="calculadora"]').click();};
+
+  window.dpEdit=i=>{
+    const e=empregados[i];
+    Object.entries({
+      eNome:e.nome, eCpf:e.cpf, eCargo:e.cargo, eSalario:e.salario,
+      eJornada:e.jornada, eDep:e.dep, eFilhos:e.filhos, eObs:e.obs
+    }).forEach(([id,v])=>$(id).value=v??'');
+    $('employeeForm').dataset.edit=i;
+    document.querySelector('[data-view="empregados"]').click();
+  };
+
+  window.dpDel=i=>{
+    if(confirm('Excluir este empregado?')){
+      empregados.splice(i,1); save(); renderEmp(); renderSelect(); updateMetrics();
+    }
+  };
+
+  window.dpCalc=i=>{
+    fillCalc(empregados[i]);
+    document.querySelector('[data-view="calculadora"]').click();
+    setTimeout(()=>{ if(typeof calcularFolha==='function') calcularFolha(); }, 50);
+  };
+
   function fillCalc(e){
-    const map=[['salarioBase',e.salario],['jornada',e.jornada],['dependentesIRRF',e.dep],['filhosSalarioFamilia',e.filhos]];
-    map.forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v});
+    const map=[
+      ['salarioBase', e.salario],
+      ['jornada', e.jornada],
+      ['dependentesIRRF', e.dep],
+      ['filhosSalarioFamilia', e.filhos]
+    ];
+    map.forEach(([id,v])=>{ const el=document.getElementById(id); if(el) el.value=v; });
   }
-  function renderSelect(){const s=$('folhaEmp');s.innerHTML='<option value="">Selecione...</option>'+empregados.map((e,i)=>`<option value="${i}">${esc(e.nome)}</option>`).join('');}
-  $('carregarEmp').onclick=()=>{const i=$('folhaEmp').value;if(i!==''){fillCalc(empregados[+i]);document.querySelector('[data-view="calculadora"]').click();}};
+
+  function renderSelect(){
+    const s=$('folhaEmp');
+    s.innerHTML='<option value="">Selecione...</option>' +
+      empregados.map((e,i)=>`<option value="${i}">${esc(e.nome)}</option>`).join('');
+  }
+
+  $('carregarEmp').onclick=()=>{
+    const i=$('folhaEmp').value;
+    if(i!==''){
+      fillCalc(empregados[+i]);
+      document.querySelector('[data-view="calculadora"]').click();
+      setTimeout(()=>{ if(typeof calcularFolha==='function') calcularFolha(); }, 50);
+    }
+  };
+
   $('buscaEmp').oninput=e=>renderEmp(e.target.value);
   $('novoEmp').onclick=()=>{ $('employeeForm').reset(); delete $('employeeForm').dataset.edit; };
-  $('limparEmp').onclick=()=>{if(confirm('Apagar todos os empregados deste navegador?')){empregados=[];save();renderEmp();renderSelect();updateMetrics();}};
-  function renderHist(){ $('histTable').innerHTML=historico.map(h=>`<tr><td>${esc(h.data)}</td><td>${esc(h.nome)}</td><td>${money(h.bruto)}</td><td>${money(h.desc)}</td><td>${money(h.liq)}</td><td>${money(h.fgts)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Nenhum cálculo salvo.</td></tr>'; }
-  $('limparHistorico').onclick=()=>{if(confirm('Limpar histórico?')){historico=[];localStorage.setItem(HIST,'[]');renderHist();updateMetrics();}};
+  $('limparEmp').onclick=()=>{
+    if(confirm('Apagar todos os empregados deste navegador?')){
+      empregados=[]; save(); renderEmp(); renderSelect(); updateMetrics();
+    }
+  };
+
+  // ---------------------------------------------------------
+  // Histórico
+  // ---------------------------------------------------------
+  function renderHist(){
+    $('histTable').innerHTML = historico.map(h=>`
+      <tr>
+        <td>${esc(h.data)}</td>
+        <td>${esc(h.nome)}</td>
+        <td>${money(h.bruto)}</td>
+        <td>${money(h.desc)}</td>
+        <td>${money(h.liq)}</td>
+        <td>${money(h.fgts)}</td>
+      </tr>`).join('') ||
+      '<tr><td colspan="6" class="empty">Nenhum cálculo salvo.</td></tr>';
+  }
+
+  $('limparHistorico').onclick=()=>{
+    if(confirm('Limpar histórico?')){
+      historico=[]; localStorage.setItem(HIST,'[]');
+      renderHist(); updateMetrics();
+    }
+  };
   $('imprimir').onclick=()=>window.print();
+
   function updateMetrics(){
     $('mEmp').textContent=empregados.length;
-    const b=historico.reduce((a,h)=>a+h.bruto,0),d=historico.reduce((a,h)=>a+h.desc,0),f=historico.reduce((a,h)=>a+h.fgts,0);
-    $('mFolha').textContent=money(b);$('mDesc').textContent=money(d);$('mFgts').textContent=money(f);
+    const b=historico.reduce((a,h)=>a+(h.bruto||0),0);
+    const d=historico.reduce((a,h)=>a+(h.desc||0),0);
+    const f=historico.reduce((a,h)=>a+(h.fgts||0),0);
+    $('mFolha').textContent=money(b);
+    $('mDesc').textContent=money(d);
+    $('mFgts').textContent=money(f);
   }
-  const resultArea=document.querySelector('#resultado')||document.querySelector('.resultado')||document.body;
-  const obs=new MutationObserver(()=>{
-    const txt=resultArea.innerText||'';
-    if(!txt.includes('R$')) return;
-    const vals=[...txt.matchAll(/R\$\s*([\d.]+,\d{2})/g)].map(m=>Number(m[1].replaceAll('.','').replace(',','.')));
-    if(vals.length>=3){
-      const h={data:new Date().toLocaleString('pt-BR'),nome:'Cálculo manual',bruto:vals[0]||0,desc:vals[1]||0,liq:vals[2]||0,fgts:vals[3]||0};
-      const last=historico[0]; if(!last || JSON.stringify(last)!==JSON.stringify(h)){historico.unshift(h);historico=historico.slice(0,100);localStorage.setItem(HIST,JSON.stringify(historico));updateMetrics();}
+
+  // ---------------------------------------------------------
+  // API para a calculadora registrar o cálculo
+  // ---------------------------------------------------------
+  window.registrarCalculo = function(dados){
+    const nome = (() => {
+      const sel = $('folhaEmp');
+      if (sel && sel.value !== '' && empregados[+sel.value]) {
+        return empregados[+sel.value].nome;
+      }
+      return 'Cálculo manual';
+    })();
+
+    const h = {
+      data: new Date().toLocaleString('pt-BR'),
+      nome: nome,
+      bruto: Number(dados.bruto || 0),
+      desc: Number(dados.desc || 0),
+      liq: Number(dados.liq || 0),
+      fgts: Number(dados.fgts || 0)
+    };
+
+    const last = historico[0];
+    if (last &&
+        last.data === h.data &&
+        last.bruto === h.bruto &&
+        last.desc === h.desc &&
+        last.liq === h.liq &&
+        last.fgts === h.fgts) {
+      return;
     }
-  });
-  try{obs.observe(resultArea,{subtree:true,childList:true,characterData:true});}catch(e){}
-  renderEmp();renderSelect();renderHist();updateMetrics();
+
+    historico.unshift(h);
+    historico = historico.slice(0, 100);
+    localStorage.setItem(HIST, JSON.stringify(historico));
+    renderHist();
+    updateMetrics();
+  };
+
+  // ---------------------------------------------------------
+  // Inicialização
+  // ---------------------------------------------------------
+  renderEmp(); renderSelect(); renderHist(); updateMetrics();
 })();
 </script>
 </body>
